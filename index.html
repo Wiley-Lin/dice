@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>3D 實體感骰子模擬器</title>
+    <title>3D 實體感骰子模擬器 (密碼保護版)</title>
     <style>
         :root {
             --dice-size: 60px;
@@ -11,8 +11,9 @@
             --dot-black: #333;
         }
         body {
+            /* 初始設為隱藏，防止閃現內容 */
+            display: none; 
             font-family: 'PingFang TC', sans-serif;
-            display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
@@ -130,6 +131,19 @@
         let lastRollTime = 0;
         const PASSWORD = "01280304";
 
+        // --- 新增：啟動檢查邏輯 ---
+        function checkInitialPassword() {
+            const input = prompt("請輸入遊戲開啟密碼:");
+            if (input === PASSWORD) {
+                // 密碼正確，顯示網頁內容並初始化
+                document.body.style.display = "flex";
+                initDice();
+            } else {
+                alert("密碼錯誤，頁面將關閉或重新載入。");
+                window.location.reload(); // 密碼錯誤就重新整理
+            }
+        }
+
         function getDotsHTML(faceNum) {
             let dots = '';
             const isRed = (faceNum === 1 || faceNum === 4);
@@ -160,7 +174,6 @@
             const count = document.getElementById('dice-count').value;
             for (let i = 0; i < count; i++) {
                 const d = createDice();
-                // 初始排列
                 d.style.transform = `translate(${(i - (count-1)/2) * 70}px, 0px)`;
                 stage.appendChild(d);
             }
@@ -168,28 +181,22 @@
 
         function rollAction() {
             const diceWrappers = document.querySelectorAll('.dice-wrapper');
-            const count = diceWrappers.length;
-
-            // --- 強制安全距離：建立網格座標池 ---
             const positions = [];
             const rows = 3;
-            const cols = 4; // 3x4=12 格，足以應付最多 10 顆骰子
+            const cols = 4; 
             
-            // 計算每格的間距，預留足夠空間避免碰撞
             const cellW = stage.offsetWidth / cols;
             const cellH = stage.offsetHeight / rows;
 
             for (let r = 0; r < rows; r++) {
                 for (let c = 0; c < cols; c++) {
                     positions.push({
-                        // 計算中心化座標並加上網格偏移
                         x: (c - (cols - 1) / 2) * (cellW * 0.8), 
                         y: (r - (rows - 1) / 2) * (cellH * 0.8)
                     });
                 }
             }
 
-            // 隨機打亂座標池順序 (Fisher-Yates Shuffle)
             for (let i = positions.length - 1; i > 0; i--) {
                 const j = Math.floor(Math.random() * (i + 1));
                 [positions[i], positions[j]] = [positions[j], positions[i]];
@@ -197,8 +204,6 @@
 
             diceWrappers.forEach((wrapper, index) => {
                 const dice = wrapper.querySelector('.dice');
-                
-                // 1. 旋轉邏輯
                 const faceRotations = [
                     {x:0, y:0}, {x:0, y:180}, {x:0, y:-90}, 
                     {x:0, y:90}, {x:-90, y:0}, {x:90, y:0}
@@ -207,9 +212,7 @@
                 const extraSpin = 720; 
                 dice.style.transform = `rotateX(${target.x + extraSpin}deg) rotateY(${target.y + extraSpin}deg)`;
 
-                // 2. 位移邏輯：從打亂後的座標池中按索引取值
                 const pos = positions[index];
-                // 加入極小的隨機擾動 (jitter)，讓排列看起來不會死板得像棋盤，但又絕不重疊
                 const jitter = 10; 
                 const finalX = pos.x + (Math.random() - 0.5) * jitter;
                 const finalY = pos.y + (Math.random() - 0.5) * jitter;
@@ -236,7 +239,8 @@
             }
         }
 
-        initDice();
+        // 修改：啟動時先跑密碼檢查，而不是直接 initDice
+        window.onload = checkInitialPassword;
     </script>
 </body>
 </html>
