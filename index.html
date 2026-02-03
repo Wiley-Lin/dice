@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>3D 實體感骰子模擬器 (密碼保護版)</title>
+    <title>3D 二中紅鯨吹牛不耍老千 耍老千是Gay</title>
     <style>
         :root {
             --dice-size: 60px;
@@ -11,7 +11,6 @@
             --dot-black: #333;
         }
         body {
-            /* 初始設為隱藏，防止閃現內容 */
             display: none; 
             font-family: 'PingFang TC', sans-serif;
             flex-direction: column;
@@ -22,7 +21,6 @@
             background-color: #2c3e50;
             overflow: hidden;
         }
-        /* 骰子舞台 */
         #dice-stage {
             position: relative;
             width: 80vw;
@@ -33,7 +31,6 @@
             justify-content: center;
             margin-bottom: 50px;
         }
-        /* 3D 骰子容器 */
         .dice-wrapper {
             position: absolute;
             width: var(--dice-size);
@@ -48,7 +45,6 @@
             transform-style: preserve-3d;
             transition: transform 1s ease-out;
         }
-        /* 骰子面基礎樣式 */
         .face {
             position: absolute;
             width: var(--dice-size);
@@ -63,25 +59,24 @@
             box-sizing: border-box;
             box-shadow: inset 0 0 10px rgba(0,0,0,0.1);
         }
-        /* 3D 擺放 */
         .face-1 { transform: rotateY(0deg) translateZ(30px); }
         .face-2 { transform: rotateY(180deg) translateZ(30px); }
         .face-3 { transform: rotateY(90deg) translateZ(30px); }
         .face-4 { transform: rotateY(-90deg) translateZ(30px); }
         .face-5 { transform: rotateX(90deg) translateZ(30px); }
         .face-6 { transform: rotateX(-90deg) translateZ(30px); }
-        /* 點點樣式 */
+        
         .dot { width: 10px; height: 10px; background: var(--dot-black); border-radius: 50%; align-self: center; justify-self: center; visibility: hidden; }
         .red { background: var(--dot-red); }
         .big-red { width: 16px; height: 16px; background: var(--dot-red); }
-        /* 點點位置對應 (1-6) */
+        
         .f1 .d5 { visibility: visible; }
         .f2 .d1, .f2 .d9 { visibility: visible; }
         .f3 .d1, .f3 .d5, .f3 .d9 { visibility: visible; }
         .f4 .d1, .f4 .d3, .f4 .d7, .f4 .d9 { visibility: visible; background: var(--dot-red); }
         .f5 .d1, .f5 .d3, .f5 .d5, .f5 .d7, .f5 .d9 { visibility: visible; }
         .f6 .d1, .f6 .d3, .f6 .d4, .f6 .d6, .f6 .d7, .f6 .d9 { visibility: visible; }
-        /* 控制列 */
+
         .ui-panel {
             background: rgba(255, 255, 255, 0.9);
             padding: 20px 40px;
@@ -98,13 +93,7 @@
             border: 1px solid #ddd;
             cursor: pointer;
         }
-        button {
-            background: #e67e22;
-            color: white;
-            border: none;
-            font-weight: bold;
-            transition: 0.2s;
-        }
+        button { background: #e67e22; color: white; border: none; font-weight: bold; transition: 0.2s; }
         button:hover { background: #d35400; transform: scale(1.05); }
     </style>
 </head>
@@ -126,21 +115,21 @@
         </select>
         <button onclick="handleRoll()">擲骰子</button>
     </div>
+
     <script>
         const stage = document.getElementById('dice-stage');
         let lastRollTime = 0;
+        let currentResults = []; // 儲存當前點數的陣列
         const PASSWORD = "01280304";
 
-        // --- 新增：啟動檢查邏輯 ---
         function checkInitialPassword() {
             const input = prompt("請輸入遊戲開啟密碼:");
             if (input === PASSWORD) {
-                // 密碼正確，顯示網頁內容並初始化
                 document.body.style.display = "flex";
                 initDice();
             } else {
-                alert("密碼錯誤，頁面將關閉或重新載入。");
-                window.location.reload(); // 密碼錯誤就重新整理
+                alert("密碼錯誤，頁面將重載。");
+                window.location.reload();
             }
         }
 
@@ -171,6 +160,7 @@
 
         function initDice() {
             stage.innerHTML = '';
+            currentResults = []; // 重置點數記錄
             const count = document.getElementById('dice-count').value;
             for (let i = 0; i < count; i++) {
                 const d = createDice();
@@ -181,17 +171,17 @@
 
         function rollAction() {
             const diceWrappers = document.querySelectorAll('.dice-wrapper');
+            const newResults = []; // 儲存這一輪的新點數
             const positions = [];
             const rows = 3;
-            const cols = 4; 
-            
+            const cols = 4;
             const cellW = stage.offsetWidth / cols;
             const cellH = stage.offsetHeight / rows;
 
             for (let r = 0; r < rows; r++) {
                 for (let c = 0; c < cols; c++) {
                     positions.push({
-                        x: (c - (cols - 1) / 2) * (cellW * 0.8), 
+                        x: (c - (cols - 1) / 2) * (cellW * 0.8),
                         y: (r - (rows - 1) / 2) * (cellH * 0.8)
                     });
                 }
@@ -208,18 +198,22 @@
                     {x:0, y:0}, {x:0, y:180}, {x:0, y:-90}, 
                     {x:0, y:90}, {x:-90, y:0}, {x:90, y:0}
                 ];
-                const target = faceRotations[Math.floor(Math.random() * 6)];
+                
+                const randomFaceIndex = Math.floor(Math.random() * 6);
+                newResults.push(randomFaceIndex + 1); // 記錄點數 (1-6)
+                
+                const target = faceRotations[randomFaceIndex];
                 const extraSpin = 720; 
                 dice.style.transform = `rotateX(${target.x + extraSpin}deg) rotateY(${target.y + extraSpin}deg)`;
 
                 const pos = positions[index];
-                const jitter = 10; 
+                const jitter = 10;
                 const finalX = pos.x + (Math.random() - 0.5) * jitter;
                 const finalY = pos.y + (Math.random() - 0.5) * jitter;
-                
                 wrapper.style.transform = `translate3d(${finalX}px, ${finalY}px, 0px)`;
             });
 
+            currentResults = newResults; // 更新全局點數紀錄
             lastRollTime = Date.now();
         }
 
@@ -227,19 +221,24 @@
             const currentTime = Date.now();
             const timeDiff = (currentTime - lastRollTime) / 1000;
 
-            if (lastRollTime !== 0 && timeDiff < 60) {
-                const input = prompt("一分鐘內再次擲骰請輸入密碼:");
+            // 檢查是否點數都不重複
+            // 只有在已經有骰過的情況下 (currentResults.length > 0) 才檢查
+            const isAllUnique = currentResults.length > 0 && new Set(currentResults).size === currentResults.length;
+
+            // 如果 (一分鐘內 且 點數有重複) 則需要密碼
+            if (lastRollTime !== 0 && timeDiff < 60 && !isAllUnique) {
+                const input = prompt("點數有重複你不應該重骰＾＾ 不要作弊：）:");
                 if (input === PASSWORD) {
                     rollAction();
                 } else if (input !== null) {
                     alert("密碼錯誤！");
                 }
             } else {
+                // 如果點數全部不重複，或者已經超過一分鐘，直接執行
                 rollAction();
             }
         }
 
-        // 修改：啟動時先跑密碼檢查，而不是直接 initDice
         window.onload = checkInitialPassword;
     </script>
 </body>
