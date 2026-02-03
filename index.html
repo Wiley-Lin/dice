@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>耍老千是甲</title>
+    <style>
+        :root {
+            --dice-size: 60px;
+            --dot-red: #e63946;
+            --dot-black: #333;
+        }
+        body {
+            display: none; 
+            font-family: 'PingFang TC', sans-serif;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+            background-color: #2c3e50;
+            overflow: hidden;
+        }
+        #dice-stage {
+            position: relative;
+            width: 80vw;
+            height: 50vh;
+            perspective: 1200px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 50px;
+        }
+        .dice-wrapper {
+            position: absolute;
+            width: var(--dice-size);
+            height: var(--dice-size);
+            transition: transform 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            transform-style: preserve-3d;
+        }
+        .dice {
+            width: 100%;
+            height: 100%;
+            position: relative;
+            transform-style: preserve-3d;
+            transition: transform 1s ease-out;
+        }
+        .face {
+            position: absolute;
+            width: var(--dice-size);
+            height: var(--dice-size);
+            background: white;
+            border: 1px solid #ccc;
+            border-radius: 10px;
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            grid-template-rows: repeat(3, 1fr);
+            padding: 6px;
+            box-sizing: border-box;
+            box-shadow: inset 0 0 10px rgba(0,0,0,0.1);
+        }
+        .face-1 { transform: rotateY(0deg) translateZ(30px); }
+        .face-2 { transform: rotateY(180deg) translateZ(30px); }
+        .face-3 { transform: rotateY(90deg) translateZ(30px); }
+        .face-4 { transform: rotateY(-90deg) translateZ(30px); }
+        .face-5 { transform: rotateX(90deg) translateZ(30px); }
+        .face-6 { transform: rotateX(-90deg) translateZ(30px); }
+        
+        .dot { width: 10px; height: 10px; background: var(--dot-black); border-radius: 50%; align-self: center; justify-self: center; visibility: hidden; }
+        .red { background: var(--dot-red); }
+        .big-red { width: 16px; height: 16px; background: var(--dot-red); }
+        
+        .f1 .d5 { visibility: visible; }
+        .f2 .d1, .f2 .d9 { visibility: visible; }
+        .f3 .d1, .f3 .d5, .f3 .d9 { visibility: visible; }
+        .f4 .d1, .f4 .d3, .f4 .d7, .f4 .d9 { visibility: visible; background: var(--dot-red); }
+        .f5 .d1, .f5 .d3, .f5 .d5, .f5 .d7, .f5 .d9 { visibility: visible; }
+        .f6 .d1, .f6 .d3, .f6 .d4, .f6 .d6, .f6 .d7, .f6 .d9 { visibility: visible; }
+
+        .ui-panel {
+            background: rgba(255, 255, 255, 0.9);
+            padding: 20px 40px;
+            border-radius: 50px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            display: flex;
+            gap: 20px;
+            align-items: center;
+        }
+        select, button {
+            padding: 10px 20px;
+            font-size: 1rem;
+            border-radius: 10px;
+            border: 1px solid #ddd;
+            cursor: pointer;
+        }
+        button { background: #e67e22; color: white; border: none; font-weight: bold; transition: 0.2s; }
+        button:hover { background: #d35400; transform: scale(1.05); }
+    </style>
+</head>
+<body>
+    <div id="dice-stage"></div>
+    <div class="ui-panel">
+        <label>數量：</label>
+        <select id="dice-count" onchange="initDice()">
+            <option value="1">1</option>
+            <option value="2">2</option>
+            <option value="3">3</option>
+            <option value="4">4</option>
+            <option value="5" selected>5</option>
+            <option value="6">6</option>
+            <option value="7">7</option>
+            <option value="8">8</option>
+            <option value="9">9</option>
+            <option value="10">10</option>
+        </select>
+        <button onclick="handleRoll()">擲骰子</button>
+    </div>
+
+    <script>
+        const stage = document.getElementById('dice-stage');
+        let lastRollTime = 0;
+        let currentResults = []; // 儲存當前點數的陣列
+        const PASSWORD = "01280304";
+
+        function checkInitialPassword() {
+            const input = prompt("請輸入遊戲開啟密碼:");
+            if (input === PASSWORD) {
+                document.body.style.display = "flex";
+                initDice();
+            } else {
+                alert("密碼錯誤，頁面將重載。");
+                window.location.reload();
+            }
+        }
+
+        function getDotsHTML(faceNum) {
+            let dots = '';
+            const isRed = (faceNum === 1 || faceNum === 4);
+            for (let i = 1; i <= 9; i++) {
+                let extraClass = (faceNum === 1 && i === 5) ? 'big-red' : (isRed ? 'red' : '');
+                dots += `<div class="dot d${i} ${extraClass}"></div>`;
+            }
+            return dots;
+        }
+
+        function createDice() {
+            const wrapper = document.createElement('div');
+            wrapper.className = 'dice-wrapper';
+            const dice = document.createElement('div');
+            dice.className = 'dice';
+            for (let i = 1; i <= 6; i++) {
+                const face = document.createElement('div');
+                face.className = `face face-${i} f${i}`;
+                face.innerHTML = getDotsHTML(i);
+                dice.appendChild(face);
+            }
+            wrapper.appendChild(dice);
+            return wrapper;
+        }
+
+        function initDice() {
+            stage.innerHTML = '';
+            currentResults = []; // 重置點數記錄
+            const count = document.getElementById('dice-count').value;
+            for (let i = 0; i < count; i++) {
+                const d = createDice();
+                d.style.transform = `translate(${(i - (count-1)/2) * 70}px, 0px)`;
+                stage.appendChild(d);
+            }
+        }
+
+        function rollAction() {
+            const diceWrappers = document.querySelectorAll('.dice-wrapper');
+            const newResults = []; // 儲存這一輪的新點數
+            const positions = [];
+            const rows = 3;
+            const cols = 4;
+            const cellW = stage.offsetWidth / cols;
+            const cellH = stage.offsetHeight / rows;
+
+            for (let r = 0; r < rows; r++) {
+                for (let c = 0; c < cols; c++) {
+                    positions.push({
+                        x: (c - (cols - 1) / 2) * (cellW * 0.8),
+                        y: (r - (rows - 1) / 2) * (cellH * 0.8)
+                    });
+                }
+            }
+
+            for (let i = positions.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [positions[i], positions[j]] = [positions[j], positions[i]];
+            }
+
+            diceWrappers.forEach((wrapper, index) => {
+                const dice = wrapper.querySelector('.dice');
+                const faceRotations = [
+                    {x:0, y:0}, {x:0, y:180}, {x:0, y:-90}, 
+                    {x:0, y:90}, {x:-90, y:0}, {x:90, y:0}
+                ];
+                
+                const randomFaceIndex = Math.floor(Math.random() * 6);
+                newResults.push(randomFaceIndex + 1); // 記錄點數 (1-6)
+                
+                const target = faceRotations[randomFaceIndex];
+                const extraSpin = 720; 
+                dice.style.transform = `rotateX(${target.x + extraSpin}deg) rotateY(${target.y + extraSpin}deg)`;
+
+                const pos = positions[index];
+                const jitter = 10;
+                const finalX = pos.x + (Math.random() - 0.5) * jitter;
+                const finalY = pos.y + (Math.random() - 0.5) * jitter;
+                wrapper.style.transform = `translate3d(${finalX}px, ${finalY}px, 0px)`;
+            });
+
+            currentResults = newResults; // 更新全局點數紀錄
+            lastRollTime = Date.now();
+        }
+
+        function handleRoll() {
+            const currentTime = Date.now();
+            const timeDiff = (currentTime - lastRollTime) / 1000;
+
+            // 檢查是否點數都不重複
+            // 只有在已經有骰過的情況下 (currentResults.length > 0) 才檢查
+            const isAllUnique = currentResults.length > 0 && new Set(currentResults).size === currentResults.length;
+
+            // 如果 (一分鐘內 且 點數有重複) 則需要密碼
+            if (lastRollTime !== 0 && timeDiff < 60 && !isAllUnique) {
+                const input = prompt("點數有重複你不應該重骰＾＾ 不要作弊：）");
+                if (input === PASSWORD) {
+                    rollAction();
+                } else if (input !== null) {
+                    alert("密碼錯誤！");
+                }
+            } else {
+                // 如果點數全部不重複，或者已經超過一分鐘，直接執行
+                rollAction();
+            }
+        }
+
+        window.onload = checkInitialPassword;
+    </script>
+</body>
+</html>
