@@ -227,7 +227,7 @@
 
             // 如果 (一分鐘內 且 點數有重複) 則需要密碼
             if (lastRollTime !== 0 && timeDiff < 60 && !isAllUnique) {
-                const input = prompt("點數有重複你不應該重骰＾＾ 不要作弊：）:");
+                const input = prompt("點數有重複你不應該重骰＾＾ 不要作弊：))");
                 if (input === PASSWORD) {
                     rollAction();
                 } else if (input !== null) {
